@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}CSRF Verification Failed{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 2rem auto; border: 2px solid var(--danger);">
+    <h2 style="color: var(--danger);">⚠️ CSRF Verification Failed</h2>
+    
+    <p style="margin: 1rem 0; color: var(--text-secondary);">
+        {{ reason|default:"CSRF token verification failed. This is a security measure to prevent unauthorized requests." }}
+    </p>
+    
+    <div style="background-color: var(--bg-tertiary); padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0;">
+        <h3 style="margin-top: 0; color: var(--warning);">Troubleshooting:</h3>
+        <ul style="margin: 0.5rem 0; padding-left: 1.5rem; color: var(--text-secondary);">
+            <li>Make sure cookies are enabled in your browser</li>
+            <li>Try reloading the page and submitting the form again</li>
+            <li>Clear your browser cache and cookies</li>
+            <li>If using an incognito/private window, try a regular window</li>
+            <li>Verify you're accessing the site via the correct URL (http://127.0.0.1:8000 or http://localhost:8000)</li>
+        </ul>
+    </div>
+    
+    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <a href="javascript:history.back()" class="btn">← Go Back</a>
+        <a href="{% url 'home' %}" class="btn secondary">Go to Home</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}My Schedule - MediCare{% endblock %}
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a class="btn" href="{% url 'appointments:doctor_agenda' %}">📅 Dashboard</a>
+        <a class="btn secondary" href="{% url 'appointments:doctor_working_hours' %}">⏰ Working Hours</a>
+        <a class="btn secondary" href="{% url 'appointments:block_time_slot' %}">🔒 Block Time Slot</a>
+        <a class="btn secondary" href="{% url 'accounts:edit_profile' %}">👤 Edit Profile</a>
+    </div>
+</div>
+
+<!-- TODAY'S SCHEDULE TIMELINE -->
+{% if today_appointments %}
+<div class="card" style="bordx0; display: flex; align-items: center; gap: 0.5rem;">
+        🕐 Today's Schedule
+    </h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">{{ today|date:'l, M d, Y' }} — {{ today_appointments.count }} appointment{{ today_appointments.count|pluralize }}</p>
+    
+    <!-- Timeline View -->
+    <div style="position: relative; padding: 1rem 0 1rem 3rem;">
+        {% for appt in today_appointments %}
+            <div style="positioxn: relative; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                <!-- Time indicator -->
+                <div style="position: absolute; left: -2.5rem; top: 0; text-align: right; width: 2rem;">
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--primary);">{{ appt.date_time|time:'H:i' }}</div>
+                </div>
+                
+                <!-- Appointment Card -->
+                <div style="padding: 1rem; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border-radius: 8px; border-left: 4px solid var(--primary);">
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 0.5rem;">
+                                👤 {{ appt.patient.name }}
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                📧 {{ appt.patient.email|default:"—" }}
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                {% if appt.status == 'confirmed' %}
+                                    <span class="badge badge-success">✓ Confirmed</span>
+                                {% elif appt.status == 'requested' %}
+                                    <span class="badge badge-info">⏳ Pending</span>
+                                {% endif %}
+                                
+                                {% if appt.attendance == 'present' %}
+                                    <span class="badge badge-success">✓ Present</span>
+                                {% elif appt.attendance == 'absent' %}
+                                    <span class="badge badge-danger">✕ Absent</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a href="{% url 'appointments:doctor_update_appointment' appt.id %}" class="btn" style="white-space: nowrap;">
+                            Edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="card" style="border-left: 4px solid var(--success); background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, transparent 100%); margin-bottom: 2rem;">
+    <h2 style="margin-top: 0;">🕐 Today's Schedule</h2>
+    <p style="color: var(--success); font-weight: 500; margin: 0;">✓ No appointments today — relax!</p>
+</div>
+{% endif %}
+
+<!-- UPCOMING 7 DAYS -->
+{% if upcoming_appointments %}
+<div class="card" style="margin-bottom: 2rem;">
+    <h2 style="margin-top: 0;">📆 Next 7 Days</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">{{ upcoming_appointments.count }} appointment{{ upcoming_appointments.count|pluralize }} scheduled</p>
+    
+    <div style="display: grid; gap: 1rem;">
+        {% regroup upcoming_appointments by date_time|date:'Y-m-d' as appointments_by_day %}
+        {% for day_group in appointments_by_day %}
+            <div style="padding: 1rem; background-color: var(--bg-secondary); border-radius: 8px; border-top: 3px solid var(--primary);">
+                <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary);">
+                    {{ day_group.grouper|date:'l, M d' }}
+                </h3>
+                <div style="display: grid; gap: 0.75rem;">
+                {% for appt in day_group.list %}
+                    <div style="padding: 0.75rem; background-color: white; border-left: 3px solid var(--info); border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 0.25rem;">
+                                <span style="color: var(--info); font-weight: 700;">{{ appt.date_time|time:'H:i' }}</span> — {{ appt.patient.name }}
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                                {{ appt.patient.email|default:"—" }}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            {% if appt.status == 'confirmed' %}
+                                <span class="badge badge-success">Confirmed</span>
+                            {% elif appt.status == 'requested' %}
+                                <span class="badge badge-info">Pending</span>
+                            {% endif %}
+                            <a href="{% url 'appointments:doctor_update_appointment' appt.id %}" class="btn" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                                Edit
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ALL APPOINTMENTS CALENDAR -->
+<div class="card">
+    <h2 style="margin-top: 0;">📋 All Appointments</h2>
+    
+    {% if appointments %}
+        <div style="display: grid; gap: 0.5rem;">
+        {% regroup appointments by date_time|date:'Y-m-d' as all_appointments_by_day %}
+        {% for day_group in all_appointments_by_day %}
+            <details style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden;">
+                <summary style="padding: 1rem; background-color: var(--bg-secondary); cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+                    <span>{{ day_group.grouper|date:'l, M d, Y' }} — {{ day_group.list|length }} appointment{{ day_group.list|length|pluralize }}</span>
+                    <span style="font-size: 1.2rem; transition: transform 0.2s;">▼</span>
+                </summary>
+                <div style="padding: 1rem; background-color: var(--bg-secondary);">
+                    <div style="display: grid; gap: 0.75rem;">
+                    {% for appt in day_group.list %}
+                        <div style="padding: 1rem; background: white; border-radius: 6px; border-left: 4px solid {% if appt.status == 'confirmed' %}var(--success){% elif appt.status == 'requested' %}var(--warning){% elif appt.status == 'cancelled' %}var(--danger){% else %}var(--info){% endif %};">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: center;">
+                                <div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Time</div>
+                                    <div style="font-weight: 600; font-size: 1.05rem;">{{ appt.date_time|time:'H:i' }} - {{ appt.end_time|time:'H:i' }}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Patient</div>
+                                    <div style="font-weight: 600;">{{ appt.patient.name }}</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ appt.patient.email|default:"—" }}</div>
+                                </div>
+                                <div>
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Status</div>
+                                        {% if appt.status == 'confirmed' %}
+                                            <span class="badge badge-success">✓ Confirmed</span>
+                                        {% elif appt.status == 'requested' %}
+                                            <span class="badge badge-info">⏳ Pending</span>
+                                        {% elif appt.status == 'completed' %}
+                                            <span class="badge badge-success">✓ Completed</span>
+                                        {% elif appt.status == 'cancelled' %}
+                                            <span class="badge badge-danger">✕ Cancelled</span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Attendance</div>
+                                        {% if appt.attendance == 'present' %}
+                                            <span class="badge badge-success">✓ Present</span>
+                                        {% elif appt.attendance == 'absent' %}
+                                            <span class="badge badge-danger">✕ Absent</span>
+                                        {% else %}
+                                            <span class="badge badge-neutral">—</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <a href="{% url 'appointments:doctor_update_appointment' appt.id %}" class="btn" style="white-space: nowrap;">Edit</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                </div>
+            </details>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div style="padding: 3rem; text-align: center; background-color: var(--bg-secondary); border-radius: 8px;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+            <p style="color: var(--text-secondary); margin: 0;">No appointments yet. Set your working hours so patients can book!</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+details summary::-webkit-details-marker {
+    display: none;
+}
+
+details summary {
+    transition: background-color 0.2s;
+}
+
+details summary:hover {
+    background-color: var(--bg-tertiary);
+}
+
+details[open] summary span:last-child {
+    transform: rotate(180deg);
+}
+
+@media (max-width: 768px) {
+    div[style*="grid-template-columns: 1fr auto"] {
+        grid-template-columns: 1fr !important;
+    }
+    
+    div[style*="grid-template-columns: 1fr 1fr 1fr auto"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
+{% endblock %}

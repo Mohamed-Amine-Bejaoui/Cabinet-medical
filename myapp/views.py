@@ -1,7 +1,15 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.http import HttpResponse
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 
 def home(request):
-    return HttpResponse("Now it's working for real")
+    return render(request, 'home.html')
+
+@login_required
+def dashboard(request):
+    role = request.user.role
+    if role == 'doctor':
+        return redirect('appointments:doctor_agenda')
+    elif role == 'secretary':
+        return redirect('appointments:secretary_dashboard')
+    else:
+        return redirect('appointments:patient_dashboard')

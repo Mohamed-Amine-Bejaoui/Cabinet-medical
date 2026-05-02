@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Find Doctors - MediCare{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>Find & Book Doctors</h2>
+    <p class="text-muted">Browse available doctors and book your appointment</p>
+</div>
+
+<div class="card" style="background-color: var(--bg-tertiary);">
+    <h3 style="margin-top: 0;">Search Doctors</h3>
+    <form method="get">
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <input type="text" name="search" placeholder="Search by name, specialty, or address..." value="{{ request.GET.search }}" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+            <button type="submit" class="btn" style="width: auto;">Search</button>
+        </div>
+    </form>
+</div>
+
+{% if doctors %}
+    <div class="grid">
+    {% for doctor in doctors %}
+        <div class="card">
+            <h3 style="margin-top: 0; color: var(--primary);">Dr. {{ doctor.name }}</h3>
+            <div style="margin-bottom: 1rem;">
+                <p style="margin: 0.5rem 0;">
+                    <strong>Specialty:</strong> 
+                    <span class="badge badge-info">{{ doctor.specialty|default:"-" }}</span>
+                </p>
+                <p style="margin: 0.5rem 0; color: var(--text-secondary);">
+                    <strong>Phone:</strong> {{ doctor.phone|default:"-" }}
+                </p>
+                {% if doctor.address %}
+                    <p style="margin: 0.5rem 0; color: var(--text-secondary);">
+                        <strong>Address:</strong> {{ doctor.address }}
+                    </p>
+                {% endif %}
+                {% if doctor.user.doctor_profile.working_hours_text %}
+                    <p style="margin: 0.5rem 0; color: var(--text-secondary);">
+                        <strong>Hours:</strong> {{ doctor.user.doctor_profile.working_hours_text }}
+                    </p>
+                {% endif %}
+            </div>
+            
+            <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
+                <a class="btn" href="{% url 'appointments:doctor_detail' doctor.id %}" style="width: 100%; text-align: center;">
+                    View & Book
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <div class="card text-center">
+        <h3>No doctors found</h3>
+        <p class="text-muted">Try adjusting your filters or check back later.</p>
+        <a class="btn" href="{% url 'appointments:doctor_list' %}">Clear Filters</a>
+    </div>
+{% endif %}
+
+<div class="card" style="background-color: var(--bg-tertiary);">
+    <h3 style="margin-top: 0;">How to Book</h3>
+    <ol style="padding-left: 1.5rem; color: var(--text-secondary);">
+        <li>Browse the list of doctors above</li>
+        <li>Click <strong>"View & Book"</strong> to see available appointment slots</li>
+        <li>Select a date and preferred time</li>
+        <li>Confirm your appointment</li>
+        <li>Check your email for confirmation details</li>
+    </ol>
+</div>
+{% endblock %}

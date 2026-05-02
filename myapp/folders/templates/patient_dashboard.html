@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}My Appointments - MediCare{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>My Appointments</h2>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a class="btn" href="{% url 'appointments:doctor_list' %}">Book New Appointment</a>
+        <a class="btn secondary" href="{% url 'accounts:edit_profile' %}">Edit Profile</a>
+    </div>
+</div>
+
+{% if appointments %}
+    <div class="card">
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Doctor</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for appt in appointments %}
+                    <tr>
+                        <td>
+                            <strong>{{ appt.date_time|date:'M d, Y' }}</strong><br>
+                            <span class="text-sm text-muted">{{ appt.date_time|time:'H:i' }}</span>
+                            {% if appt.is_recurring or appt.is_recurring_instance %}
+                                <br><span style="font-size: 0.8rem; background-color: #fef3c7; color: #92400e; padding: 0.25rem 0.5rem; border-radius: 3px;">
+                                     🔄 {% if appt.is_recurring %}Recurring (every {{ appt.recurrence_frequency_months }} months){% else %}Part of series{% endif %}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>Dr. {{ appt.doctor.name }}</strong><br>
+                            <span class="text-sm text-muted">{{ appt.doctor.specialty|default:"-" }}</span>
+                        </td>
+                        <td>
+                            {% if appt.status == 'confirmed' %}
+                                <span class="badge badge-success">Confirmed</span>
+                            {% elif appt.status == 'requested' %}
+                                <span class="badge badge-info">Pending</span>
+                            {% elif appt.status == 'completed' %}
+                                <span class="badge badge-success">Completed</span>
+                            {% elif appt.status == 'cancelled' %}
+                                <span class="badge badge-danger">Cancelled</span>
+                            {% else %}
+                                <span class="badge badge-neutral">{{ appt.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if appt.status != 'cancelled' and appt.status != 'completed' %}
+                                {% if appt.can_cancel %}
+                                    <a class="btn danger" href="{% url 'appointments:cancel_appointment' appt.id %}" 
+                                       onclick="return confirm('Are you sure?');" style="display: inline-block;">Cancel</a>
+                                {% else %}
+                                    <span class="text-muted text-sm">Cannot cancel<br>(within 24h)</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <div class="card text-center">
+        <h3>No appointments yet</h3>
+        <p class="text-muted">Ready to book your first appointment?</p>
+        <a class="btn" href="{% url 'appointments:doctor_list' %}">Book Now</a>
+    </div>
+{% endif %}
+{% endblock %}

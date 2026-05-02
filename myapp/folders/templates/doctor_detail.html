@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Book Appointment - Dr. {{ doctor.name }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>Dr. {{ doctor.name }}</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0;">
+        <div>
+            <p style="margin: 0.5rem 0;"><strong>Specialty:</strong> <span style="color: var(--primary);">{{ doctor.specialty }}</span></p>
+            <p style="margin: 0.5rem 0;"><strong>Phone:</strong> {{ doctor.phone }}</p>
+            {% if doctor.address %}
+                <p style="margin: 0.5rem 0;"><strong>Address:</strong> {{ doctor.address }}</p>
+            {% endif %}
+            <p style="margin: 0.5rem 0;"><strong>Working Hours:</strong> {{ doctor.working_hours_text|default:'Not configured' }}</p>
+        </div>
+        <div>
+            <a href="{% url 'appointments:doctor_list' %}" class="btn secondary" style="width: 100%;">← Back to Doctors</a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 1.5rem;">📅 Select a Date</h3>
+    <form method="get" style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" 
+               style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; flex: 1; font-size: 1rem;">
+        <button type="submit" style="padding: 0.75rem 1.5rem; background-color: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Check Availability</button>
+    </form>
+
+    {% if available_slots %}
+        <div>
+            <h4 style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.95rem;">Available time slots for {{ selected_date|date:'M d, Y' }}</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;">
+            {% for slot in available_slots %}
+                <a href="{% url 'appointments:request_appointment' %}?doctor_id={{ doctor.id }}&date_time={{ slot|date:'Y-m-d\TH:i' }}" 
+                   class="btn" style="text-align: center; padding: 1rem; background-color: #f0f9ff; border: 2px solid var(--primary); color: var(--primary); text-decoration: none; transition: all 0.2s;">
+                    <div style="font-weight: 600; font-size: 1.1rem;">{{ slot|time:'H:i' }}</div>
+                    <div style="font-size: 0.85rem; margin-top: 0.25rem;">{{ slot|date:'M d' }}</div>
+                </a>
+            {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div style="padding: 2rem; text-align: center; background-color: var(--bg-secondary); border-radius: 6px; color: var(--text-secondary);">
+            <p style="margin: 0;">No available slots for <strong>{{ selected_date|date:'M d, Y' }}</strong></p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">Try selecting a different date</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.btn:hover {
+    background-color: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+</style>
+{% endblock %}

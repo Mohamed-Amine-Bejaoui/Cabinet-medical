@@ -1,0 +1,387 @@
+{% extends 'base.html' %}
+{% block title %}Doctor Schedule - MediCare{% endblock %}
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a class="btn" href="{% url 'appointments:doctor_agenda' %}" style="background-color: var(--primary); color: white; font-weight: 600;">📅 Schedule</a>
+            <a class="btn secondary" href="{% url 'appointments:doctor_working_hours' %}" style="color: black;border-color:#1d4ed8; ">⏰ Working Hours</a>
+            <a class="btn secondary" href="{% url 'appointments:block_time_slot' %}" style="color: black;border-color:#1d4ed8;" >🔒 Block Time</a>
+            <a class="btn secondary" href="{% url 'accounts:edit_profile' %}" style="color: black;border-color:#1d4ed8;">👤 Profile</a>
+        </div>
+    </div>
+</div>
+
+<!-- TODAY'S SECTION -->
+{% if today_appointments %}
+<div class="card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, transparent 100%); border-left: 5px solid var(--success); margin-bottom: 2rem;">
+    <h2 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--success);">
+        🕐 Today's Appointments
+    </h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">{{ today|date:'l, F d, Y' }} • {{ today_appointments|length }} appointment{{ today_appointments|length|pluralize }}</p>
+    
+    <div style="display: grid; gap: 1rem;">
+        {% for appt in today_appointments %}
+        <div style="padding: 1.25rem; background: white; border-radius: 10px; border-left: 5px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center;">
+            <div>
+                <div style="display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.75rem;">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); min-width: 4rem;">{{ appt.date_time|time:'H:i' }}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ appt.date_time|time:'A' }}</div>
+                </div>
+                <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">{{ appt.patient.name }}</div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                    📧 {{ appt.patient.email }}
+                    {% if appt.patient.address %}<br>📍 {{ appt.patient.address }}{% endif %}
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    {% if appt.attendance == 'present' %}
+                        <span class="badge" style="background-color: #dcfce7; color: #166534;">✓ Present</span>
+                    {% elif appt.attendance == 'absent' %}
+                        <span class="badge" style="background-color: #fee2e2; color: #991b1b;">✕ Absent</span>
+                    {% else %}
+                        <span class="badge" style="background-color: #f0f9ff; color: #0c4a6e;">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+            <a href="{% url 'appointments:doctor_update_appointment' appt.id %}" class="btn" style="white-space: nowrap; background-color: var(--primary); color: white;">
+                Update Details →
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, transparent 100%); border-left: 5px solid var(--success); margin-bottom: 2rem; text-align: center; padding: 2rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">☀️</div>
+    <h3 style="margin: 0 0 0.5rem 0; color: var(--success);">No Appointments Today</h3>
+    <p style="color: var(--text-secondary); margin: 0;">Enjoy your well-deserved break!</p>
+</div>
+{% endif %}
+
+<!-- CALENDAR VIEW -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div id="calendar-container" style="margin-bottom: 2rem;">
+        <!-- Month Navigation -->
+        <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; margin-bottom: 1.5rem;">
+            <!-- Previous Month Button -->
+            <a onclick="loadCalendarMonth(-1); return false;" 
+               class="btn" style="padding: 0.75rem 1rem; background-color: var(--primary); color: white; font-size: 1.2rem; text-decoration: none; border-radius: 50%; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; hover: transform scale(1.1);"
+               onmouseover="this.style.transform='scale(1.1)';"
+               onmouseout="this.style.transform='scale(1)';">
+                ← 
+            </a>
+            
+            <!-- Month Name -->
+            <h2 id="calendar-month" style="margin: 0; font-size: 1.8rem; color: var(--primary); min-width: 250px; text-align: center;">{{ month_name }}</h2>
+            
+            <!-- Next Month Button -->
+            <a onclick="loadCalendarMonth(1); return false;" 
+               class="btn" style="padding: 0.75rem 1rem; background-color: var(--primary); color: white; font-size: 1.2rem; text-decoration: none; border-radius: 50%; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; hover: transform scale(1.1);"
+               onmouseover="this.style.transform='scale(1.1)';"
+               onmouseout="this.style.transform='scale(1)';">
+                →
+            </a>
+        </div>
+
+        <!-- Month/Year Selector -->
+        <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem;">
+            <select id="month-year-selector" style="font-size: 0.9rem; border: 2px solid var(--border); border-radius: 0.4rem; background-color: white; cursor: pointer; width: 160px; height: 36px; padding: 0 0.75rem; box-sizing: border-box; margin: 0; vertical-align: middle; line-height: 36px;">
+                <option value="">Select Month & Year...</option>
+                {% for i in date_range %}
+                    <option value="{{ i.month }}-{{ i.year }}" 
+                        {% if i.month == current_month.month and i.year == current_month.year %}selected{% endif %}>
+                        {{ i|date:"F Y" }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button onclick="jumpToMonth(); return false;" 
+                    style="background-color: var(--primary); color: white; font-size: 0.9rem; border: none; border-radius: 0.4rem; cursor: pointer; transition: all 0.2s; font-weight: 600; white-space: nowrap; height: 36px; padding: 0 1rem; box-sizing: border-box; margin: 0; vertical-align: middle; line-height: 36px;"
+                    onmouseover="this.style.backgroundColor='#0056b3';"
+                    onmouseout="this.style.backgroundColor='var(--primary)';">
+                Go
+            </button>
+        </div>
+        
+        <!-- CALENDAR GRID -->
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; background: white;">
+                <!-- Weekday Headers -->
+                <thead>
+                    <tr>
+                        {% for day_name in weekday_names %}
+                        <th style="padding: 1rem; text-align: center; border-bottom: 2px solid var(--border); font-weight: 700; color: var(--primary); background-color: var(--bg-tertiary);">
+                            {{ day_name }}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <!-- Calendar Days -->
+                <tbody>
+                    {% for week in calendar_weeks %}
+                    <tr>
+                        {% for day_data in week %}
+                        <td style="height: 140px; vertical-align: top; border: 1px solid var(--border); padding: 0; position: relative; background-color: {% if day_data and day_data.is_past and not day_data.is_today %}var(--bg-tertiary){% else %}white{% endif %};">
+                            {% if day_data %}
+                                <!-- Day Number -->
+                                <div style="padding: 0.75rem; font-weight: 600; font-size: 1.1rem; {% if day_data.is_today %}background-color: var(--primary); color: white; border-radius: 50%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center;{% else %}color: {% if day_data.is_past %}var(--text-secondary){% else %}var(--text-primary){% endif %};{% endif %}">
+                                    {{ day_data.day }}
+                                </div>
+                                
+                                <!-- Appointments Count Badge -->
+                                {% if day_data.appt_count > 0 %}
+                                <div style="padding: 0.5rem 0.75rem; min-height: 90px; overflow-y: auto;">
+                                    <!-- Appointment Indicators -->
+                                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                                        {% for appt in day_data.appointments %}
+                                        <a href="{% url 'appointments:doctor_update_appointment' appt.id %}" 
+                                           style="padding: 0.5rem; background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%); color: white; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-decoration: none; cursor: pointer; display: block; transition: all 0.2s; hover: transform scale(1.05);"
+                                           title="Appointment with {{ appt.patient.name }}"
+                                           onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.4)';"
+                                           onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                            {{ appt.date_time|time:'H:i' }}
+                                            <div style="font-size: 0.7rem; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ appt.patient.name|truncatewords:2 }}</div>
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div style="padding: 0.5rem 0.75rem; color: var(--text-secondary); font-size: 0.85rem; text-align: center; height: 90px; display: flex; align-items: center; justify-content: center;">
+                                    {% if not day_data.is_past or day_data.is_today %}—{% else %}<span style="opacity: 0.5;">—</span>{% endif %}
+                                </div>
+                                {% endif %}
+                            {% else %}
+                            <div style="height: 100%; background-color: #f5f5f5;"></div>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 1rem; height: 1rem; background-color: var(--primary); border-radius: 3px;"></div>
+            <span style="font-size: 0.9rem; color: var(--text-secondary);">Confirmed Appointment</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 2rem; height: 2rem; background-color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.9rem;">{{ today.day }}</div>
+            <span style="font-size: 0.9rem; color: var(--text-secondary);">Today</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 1rem; height: 1rem; background-color: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 3px;"></div>
+            <span style="font-size: 0.9rem; color: var(--text-secondary);">Past Date</span>
+        </div>
+    </div>
+</div>
+
+<!-- UPCOMING SUMMARY -->
+<div class="card">
+    <h3 style="margin-top: 0; color: var(--primary);">📊 Schedule Summary</h3>
+    {% if appointments %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="padding: 1rem; background-color: var(--bg-tertiary); border-radius: 8px; text-align: center;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">{{ today_appointments|length }}</div>
+                <div style="color: var(--text-secondary); font-size: 0.9rem;">Today's Appointments</div>
+            </div>
+            <div style="padding: 1rem; background-color: var(--bg-tertiary); border-radius: 8px; text-align: center;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--info); margin-bottom: 0.5rem;">{{ appointments|length }}</div>
+                <div style="color: var(--text-secondary); font-size: 0.9rem;">This Month</div>
+            </div>
+        </div>
+        
+        <div style="padding: 1rem; background-color: #f0fdf4; border-radius: 8px; border-left: 4px solid var(--success);">
+            <p style="margin: 0; color: var(--success); font-weight: 500;">✓ All appointments shown are CONFIRMED only. Pending appointments are hidden.</p>
+        </div>
+    {% else %}
+        <div style="padding: 2rem; text-align: center; background-color: var(--bg-tertiary); border-radius: 8px;">
+            <div style="font-size: 2rem; margin-bottom: 1rem;">📭</div>
+            <p style="color: var(--text-secondary); margin: 0;">No confirmed appointments this month.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .badge {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn:hover {
+        background-color: var(--border);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn.secondary {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+    }
+
+    .btn.secondary:hover {
+        background-color: var(--bg-tertiary);
+    }
+
+    table td {
+        min-width: 120px;
+    }
+
+    @media (max-width: 768px) {
+        table {
+            font-size: 0.85rem;
+        }
+        table td {
+            height: 100px !important;
+            padding: 0.5rem !important;
+        }
+        table th {
+            padding: 0.75rem !important;
+        }
+    }
+</style>
+
+<script>
+// Store current month and year for navigation
+let currentMonth = {{ current_month.month }};
+let currentYear = {{ current_month.year }};
+
+function loadCalendarMonth(offset) {
+    // Calculate new month and year
+    let newMonth = currentMonth + offset;
+    let newYear = currentYear;
+    
+    // Handle year boundaries
+    if (newMonth > 12) {
+        newMonth = 1;
+        newYear += 1;
+    } else if (newMonth < 1) {
+        newMonth = 12;
+        newYear -= 1;
+    }
+    
+    // Show loading state
+    const container = document.getElementById('calendar-container');
+    const originalContent = container.innerHTML;
+    container.style.opacity = '0.6';
+    
+    // Fetch the calendar with AJAX
+    fetch(`?month=${newMonth}&year=${newYear}`)
+        .then(response => response.text())
+        .then(html => {
+            // Parse the response HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extract the new calendar container
+            const newCalendarContainer = doc.getElementById('calendar-container');
+            
+            if (newCalendarContainer) {
+                // Update the calendar container with new content
+                container.innerHTML = newCalendarContainer.innerHTML;
+                
+                // Update current month/year
+                currentMonth = newMonth;
+                currentYear = newYear;
+                
+                // Re-attach event listeners to new arrow buttons
+                const arrowLinks = container.querySelectorAll('a[onclick*="loadCalendarMonth"]');
+                arrowLinks.forEach(link => {
+                    link.addEventListener('mouseover', function() {
+                        this.style.transform = 'scale(1.1)';
+                    });
+                    link.addEventListener('mouseout', function() {
+                        this.style.transform = 'scale(1)';
+                    });
+                });
+                
+                // Smooth animation
+                container.style.opacity = '1';
+            } else {
+                // Restore original content on error
+                container.innerHTML = originalContent;
+                container.style.opacity = '1';
+                console.error('Calendar container not found in response');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading calendar:', error);
+            container.innerHTML = originalContent;
+            container.style.opacity = '1';
+        });
+}
+
+function jumpToMonth() {
+    const selector = document.getElementById('month-year-selector');
+    const value = selector.value;
+    
+    if (!value) {
+        alert('Please select a month and year');
+        return;
+    }
+    
+    const [month, year] = value.split('-');
+    currentMonth = parseInt(month);
+    currentYear = parseInt(year);
+    
+    // Show loading state
+    const container = document.getElementById('calendar-container');
+    const originalContent = container.innerHTML;
+    container.style.opacity = '0.6';
+    
+    // Fetch the calendar with AJAX
+    fetch(`?month=${month}&year=${year}`)
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newCalendarContainer = doc.getElementById('calendar-container');
+            
+            if (newCalendarContainer) {
+                container.innerHTML = newCalendarContainer.innerHTML;
+                
+                // Re-attach event listeners
+                const arrowLinks = container.querySelectorAll('a[onclick*="loadCalendarMonth"]');
+                arrowLinks.forEach(link => {
+                    link.addEventListener('mouseover', function() {
+                        this.style.transform = 'scale(1.1)';
+                    });
+                    link.addEventListener('mouseout', function() {
+                        this.style.transform = 'scale(1)';
+                    });
+                });
+                
+                container.style.opacity = '1';
+            } else {
+                container.innerHTML = originalContent;
+                container.style.opacity = '1';
+                console.error('Calendar container not found in response');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading calendar:', error);
+            container.innerHTML = originalContent;
+            container.style.opacity = '1';
+        });
+}
+</script>
+{% endblock %}

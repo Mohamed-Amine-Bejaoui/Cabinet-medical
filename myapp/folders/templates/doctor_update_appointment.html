@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Manage Appointment - MediCare{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+    <a href="{% url 'appointments:doctor_agenda' %}" style="color: var(--primary); text-decoration: none; margin-bottom: 1.5rem; display: inline-block;">← Back to Schedule</a>
+    
+    <h2 style="margin-top: 0;">Manage Appointment</h2>
+    
+    <!-- Appointment Info -->
+    <div style="padding: 1.5rem; background-color: var(--bg-secondary); border-radius: 8px; margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Patient</div>
+                <div style="font-weight: 600; font-size: 1.1rem;">{{ appointment.patient.name }}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ appointment.patient.email }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Scheduled Date & Time</div>
+                <div style="font-weight: 600; font-size: 1.1rem;">{{ appointment.date_time|date:'M d, Y' }}</div>
+                <div style="font-size: 0.95rem; color: var(--text-secondary);">{{ appointment.date_time|time:'H:i' }} - {{ appointment.end_time|time:'H:i' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- STATUS SECTION (For Pending Requests) -->
+        {% if appointment.status == 'requested' %}
+        <div style="padding: 1.5rem; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%); border: 2px solid var(--warning); border-radius: 8px; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: var(--warning);">⏳ Pending Approval</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">This appointment request is waiting for your confirmation.</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <button type="submit" name="status" value="confirmed" style="padding: 1rem; background-color: var(--success); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem;">
+                    ✓ Approve Appointment
+                </button>
+                <button type="submit" name="status" value="cancelled" style="padding: 1rem; background-color: var(--danger); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem;">
+                    ✕ Reject Request
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- APPOINTMENT DETAILS FORM -->
+        <div style="padding: 1.5rem; background-color: var(--bg-secondary); border-radius: 8px; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0;">Appointment Details</h3>
+            
+            {% if form.status %}
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Status</label>
+                <select name="status" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+                    <option value="requested" {% if appointment.status == 'requested' %}selected{% endif %}>⏳ Pending</option>
+                    <option value="confirmed" {% if appointment.status == 'confirmed' %}selected{% endif %}>✓ Confirmed</option>
+                    <option value="completed" {% if appointment.status == 'completed' %}selected{% endif %}>✓ Completed</option>
+                    <option value="cancelled" {% if appointment.status == 'cancelled' %}selected{% endif %}>✕ Cancelled</option>
+                </select>
+            </div>
+            {% endif %}
+
+            {% if form.attendance %}
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Patient Attendance</label>
+                <select name="attendance" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+                    <option value="unknown" {% if appointment.attendance == 'unknown' %}selected{% endif %}>—  Unknown</option>
+                    <option value="present" {% if appointment.attendance == 'present' %}selected{% endif %}>✓ Present</option>
+                    <option value="absent" {% if appointment.attendance == 'absent' %}selected{% endif %}>✕ Absent</option>
+                </select>
+            </div>
+            {% endif %}
+
+            {% if form.notes %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Confidential Notes</label>
+                <textarea name="notes" rows="5" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; resize: vertical;">{{ appointment.notes }}</textarea>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">These notes are private and only visible to you</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" style="flex: 1; padding: 1rem; background-color: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem;">
+                💾 Save Changes
+            </button>
+            <a href="{% url 'appointments:doctor_agenda' %}" style="flex: 1; padding: 1rem; background-color: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 6px; font-weight: 600; text-decoration: none; text-align: center;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+button[type="submit"]:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+</style>
+
+{% endblock %}

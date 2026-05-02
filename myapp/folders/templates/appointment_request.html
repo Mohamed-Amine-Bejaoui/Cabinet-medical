@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Request Appointment{% endblock %}
+{% block content %}
+<div class="card">
+    <h2>Request Appointment</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Fill in the details below to request an appointment</p>
+    
+    <form method="post" id="appointmentForm">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label for="{{ form.doctor.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                Doctor <span style="color: var(--danger);">*</span>
+            </label>
+            {{ form.doctor }}
+            {% if form.doctor.errors %}
+                <div style="color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem;">
+                    {{ form.doctor.errors.0 }}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label for="{{ form.date_time.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                Appointment Date & Time <span style="color: var(--danger);">*</span>
+            </label>
+            {{ form.date_time }}
+            {% if form.date_time.errors %}
+                <div style="color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem;">
+                    {{ form.date_time.errors.0 }}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Recurrence Section -->
+        <div style="margin: 2rem 0; padding: 1.5rem; background-color: var(--bg-tertiary); border-radius: 8px; border-left: 4px solid var(--primary);">
+            <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--primary);">📋 Chronic Disease Management</h3>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-size: 1rem;">
+                    {{ form.is_recurring }}
+                    <span style="margin-left: 0.5rem; font-weight: 500;">{{ form.is_recurring.label }}</span>
+                </label>
+                {% if form.is_recurring.errors %}
+                    <div style="color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem;">
+                        {{ form.is_recurring.errors.0 }}
+                    </div>
+                {% endif %}
+                <p style="margin: 0.5rem 0 0 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+                    {{ form.is_recurring.help_text }}
+                </p>
+            </div>
+
+            <div id="recurrenceOptions" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="{{ form.recurrence_frequency_months.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        {{ form.recurrence_frequency_months.label }}
+                    </label>
+                    {{ form.recurrence_frequency_months }}
+                    {% if form.recurrence_frequency_months.errors %}
+                        <div style="color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem;">
+                            {{ form.recurrence_frequency_months.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="{{ form.recurrence_end_date.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        {{ form.recurrence_end_date.label }}
+                    </label>
+                    {{ form.recurrence_end_date }}
+                    {% if form.recurrence_end_date.errors %}
+                        <div style="color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem;">
+                            {{ form.recurrence_end_date.errors.0 }}
+                        </div>
+                    {% endif %}
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">
+                        Leave blank to continue indefinitely
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background-color: #fee; border: 1px solid var(--danger); border-radius: 6px; color: var(--danger);">
+                {% for error in form.non_field_errors %}
+                    <p style="margin: 0;">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" style="flex: 1; padding: 0.75rem 1.5rem; background-color: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem;">
+                ✓ Submit Request
+            </button>
+            <a href="{% url 'appointments:doctor_list' %}" class="btn secondary" style="flex: 1; padding: 0.75rem 1.5rem; text-align: center;">
+                ← Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+select,
+input[type="text"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+input[type="number"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+input[type="checkbox"] {
+    cursor: pointer;
+}
+
+button[type="submit"]:hover {
+    opacity: 0.9;
+}
+
+.btn.secondary {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn.secondary:hover {
+    background-color: var(--border);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isRecurringCheckbox = document.getElementById('{{ form.is_recurring.id_for_label }}');
+    const recurrenceOptions = document.getElementById('recurrenceOptions');
+    
+    function toggleRecurrenceOptions() {
+        const checkbox = document.querySelector('input[name="is_recurring"]');
+        if (checkbox && checkbox.checked) {
+            recurrenceOptions.style.display = 'block';
+        } else {
+            recurrenceOptions.style.display = 'none';
+        }
+    }
+    
+    // Initial state
+    toggleRecurrenceOptions();
+    
+    // Listen for changes
+    const recurringInput = document.querySelector('input[name="is_recurring"]');
+    if (recurringInput) {
+        recurringInput.addEventListener('change', toggleRecurrenceOptions);
+    }
+});
+</script>
+{% endblock %}

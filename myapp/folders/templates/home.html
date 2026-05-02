@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Home - MediCare{% endblock %}
+{% block content %}
+<div class="card" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; text-align: center; padding: 3rem 2rem; border: none;">
+    <h1 style="margin: 0 0 1rem 0; font-size: 2rem; font-weight: 700;color: white;">MediCare</h1>
+    <p style="font-size: 1.1rem; opacity: 0.9; margin: 0;">Professional appointment scheduling system</p>
+</div>
+
+{% if user.is_authenticated %}
+    {% if user.status == 'APPROVED' %}
+    <div class="grid">
+        {% if user.role == 'patient' %}
+            <div class="card">
+                <h3 style="color: var(--success); margin-bottom: 1rem;">My Appointments</h3>
+                <p class="text-muted">View and manage your upcoming appointments with doctors.</p>
+                <a class="btn" href="{% url 'dashboard' %}">View Appointments →</a>
+            </div>
+            <div class="card">
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">Find Doctors</h3>
+                <p class="text-muted">Browse available doctors and book your next appointment.</p>
+                <a class="btn" href="{% url 'appointments:doctor_list' %}">Find Doctor →</a>
+            </div>
+        {% elif user.role == 'doctor' %}
+            <div class="card">
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">My Agenda</h3>
+                <p class="text-muted">View your schedule and manage patient appointments.</p>
+                <a class="btn" href="{% url 'appointments:doctor_agenda' %}">Open Agenda →</a>
+            </div>
+            <div class="card">
+                <h3 style="color: var(--warning); margin-bottom: 1rem;">My Schedule</h3>
+                <p class="text-muted">Configure working hours and block unavailable time.</p>
+                <a class="btn" href="{% url 'accounts:edit_profile' %}">Edit Schedule →</a>
+            </div>
+        {% elif user.role == 'secretary' %}
+            <div class="card">
+                <h3 style="color: var(--info); margin-bottom: 1rem;">Doctor's Schedule</h3>
+                <p class="text-muted">Manage appointments and patients for your assigned doctor.</p>
+                <a class="btn" href="{% url 'appointments:secretary_dashboard' %}">Go to Dashboard →</a>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card" style="background-color: var(--bg-tertiary);">
+        <h3 style="margin-top: 0;">Welcome, {{ user.get_full_name|default:user.username }}</h3>
+        <p class="text-muted">You're logged in as: <strong>{{ user.get_role_display|default:user.role }}</strong></p>
+        <p class="text-muted">Last login: <strong>{{ user.last_login|date:'M d, Y H:i'|default:'First login' }}</strong></p>
+    </div>
+
+{% else %}
+    <div class="grid">
+        <div class="card">
+            <h3 style="color: var(--success); margin-bottom: 1rem;">Patient Account</h3>
+            <p class="text-muted">Create an account to find doctors and book appointments.</p>
+            <ul style="padding-left: 1.5rem; margin: 1rem 0; font-size: 0.95rem; color: var(--text-secondary);">
+                <li>Browse available doctors</li>
+                <li>Book appointments online</li>
+                <li>View appointment history</li>
+            </ul>
+            <a class="btn" href="{% url 'accounts:signup' %}">Create Patient Account →</a>
+        </div>
+        
+        <div class="card">
+            <h3 style="color: var(--primary); margin-bottom: 1rem;">Doctor Account</h3>
+            <p class="text-muted">Sign up to manage your schedule and patient appointments.</p>
+            <ul style="padding-left: 1.5rem; margin: 1rem 0; font-size: 0.95rem; color: var(--text-secondary);">
+                <li>Manage your agenda</li>
+                <li>Track patient attendance</li>
+                <li>Add confidential notes</li>
+            </ul>
+            <a class="btn" href="{% url 'accounts:signup' %}">Create Doctor Account →</a>
+        </div>
+    </div>
+
+    <div class="card text-center">
+        <h3>Already have an account?</h3>
+        <a class="btn" href="{% url 'accounts:login' %}">Sign In</a>
+    </div>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile - MediCare{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 2rem auto;">
+    <h2>Edit Profile</h2>
+    
+    <form method="post" style="margin-top: 1.5rem;">
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div style="margin-bottom: 1.5rem;">
+                <label for="{{ field.id_for_label }}" style="display: block; font-weight: 500; margin-bottom: 0.5rem;">
+                    {{ field.label }}
+                </label>
+                {% if field.widget.input_type == 'textarea' %}
+                    <textarea name="{{ field.name }}" id="{{ field.id_for_label }}" rows="5" 
+                              style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-family: inherit;{% if field.field.disabled %} background-color: var(--bg-tertiary); cursor: not-allowed;{% endif %}" {% if field.field.disabled %}disabled{% endif %}>{{ field.value|default:'' }}</textarea>
+                {% else %}
+                    <input type="{{ field.widget.input_type }}" name="{{ field.name }}" 
+                           id="{{ field.id_for_label }}" value="{{ field.value|default:'' }}"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-family: inherit;{% if field.field.disabled %} background-color: var(--bg-tertiary); cursor: not-allowed;{% endif %}" {% if field.field.disabled %}disabled{% endif %}>
+                {% endif %}
+                {% if field.errors %}
+                    <div style="color: var(--danger); font-size: 0.85rem; margin-top: 0.25rem;">
+                        {{ field.errors.0 }}
+                    </div>
+                {% endif %}
+                {% if field.help_text %}
+                    <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">
+                        {{ field.help_text|safe }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <button type="submit" style="width: 100%;">Save Changes</button>
+    </form>
+</div>
+{% endblock %}

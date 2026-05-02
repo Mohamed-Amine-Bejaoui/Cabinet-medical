@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel - MediCare{% endblock %}
+{% block content %}
+<div class="card" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none;">
+    <h1 style="margin: 0; font-size: 1.75rem;">Admin Panel</h1>
+    <p style="opacity: 0.9; margin: 0.5rem 0 0 0;">Review and manage doctor registrations</p>
+</div>
+
+<!-- PENDING DOCTOR APPROVALS -->
+<div class="card">
+    <h2 style="margin-top: 0; margin-bottom: 1rem;">Pending Doctor Approvals {% if pending_doctors %}<span class="badge badge-warning">{{ pending_doctors.count }}</span>{% endif %}</h2>
+    
+    {% if pending_doctors %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Name & Specialty</th>
+                        <th>Assigned Secretaries</th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doctor_user in pending_doctors %}
+                        <tr style="background-color: #fffbeb;">
+                            <td><strong>{{ doctor_user.username }}</strong></td>
+                            <td><span class="text-sm">{{ doctor_user.email }}</span></td>
+                            <td>
+                                {% if doctor_user.doctor_profile %}
+                                    <strong>Dr. {{ doctor_user.doctor_profile.name }}</strong><br>
+                                    <span class="text-sm text-muted">{{ doctor_user.doctor_profile.specialty|default:"-" }}</span>
+                                {% else %}
+                                    <span class="text-muted">Profile not created</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doctor_user.assigned_secretaries.all %}
+                                    <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem;">
+                                        {% for secretary in doctor_user.assigned_secretaries.all %}
+                                            <li>{{ secretary.username }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">None assigned</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                                    <a href="{% url 'accounts:approve_doctor' doctor_user.id %}" class="btn success" style="margin: 0;">Approve</a>
+                                    <a href="{% url 'accounts:delete_doctor' doctor_user.id %}" class="btn danger" style="margin: 0;" onclick="return confirm('Confirm deletion of Dr. {{ doctor_user.username }}?');">Delete</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 2rem; background-color: #ecfdf5; border-radius: 8px;">
+            <p style="margin: 0; color: #065f46; font-weight: 500;">No pending approvals</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- APPROVED DOCTORS -->
+<div class="card">
+    <h2 style="margin-top: 0; margin-bottom: 1rem;">Approved Doctors {% if approved_doctors %}<span class="badge badge-success">{{ approved_doctors.count }}</span>{% endif %}</h2>
+    
+    {% if approved_doctors %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Name & Specialty</th>
+                        <th>Assigned Secretaries</th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doctor_user in approved_doctors %}
+                        <tr>
+                            <td><strong style="color: var(--primary);">{{ doctor_user.username }}</strong></td>
+                            <td><span class="text-sm">{{ doctor_user.email }}</span></td>
+                            <td>
+                                {% if doctor_user.doctor_profile %}
+                                    <strong>Dr. {{ doctor_user.doctor_profile.name }}</strong><br>
+                                    <span class="text-sm text-muted">{{ doctor_user.doctor_profile.specialty }}</span>
+                                {% else %}
+                                    <span class="text-muted">Profile not created</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doctor_user.assigned_secretaries.all %}
+                                    <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem;">
+                                        {% for secretary in doctor_user.assigned_secretaries.all %}
+                                            <li>{{ secretary.username }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">None</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                <a href="{% url 'accounts:delete_doctor' doctor_user.id %}" class="btn danger" onclick="return confirm('Confirm deletion of Dr. {{ doctor_user.username }}?');">Remove</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 2rem; background-color: #ecf9ff; border-radius: 8px;">
+            <p style="margin: 0; color: #164e63; font-weight: 500;">No approved doctors yet</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
