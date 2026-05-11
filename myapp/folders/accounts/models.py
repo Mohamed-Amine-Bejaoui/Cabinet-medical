@@ -62,6 +62,7 @@ class Doctor(models.Model):
     )
     name = models.CharField(max_length=150)
     specialty = models.CharField(max_length=120)
+    working_hours_text = models.CharField(max_length=255, blank=True, default='')
     phone = models.CharField(max_length=20, blank=True)
     address = models.CharField(max_length=255, blank=True)
 

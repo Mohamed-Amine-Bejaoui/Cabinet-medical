@@ -7,25 +7,73 @@ from django.utils import timezone
 from .models import Appointment, DoctorHoliday, DoctorWorkingHour
 
 
-def notify_appointment_event(appointment, event):
-    patient_email = appointment.patient.email
-    if not patient_email:
+def notify_appointment_event(appointment, event, appointment_id=None):
+    """
+    Send email notifications for appointment events.
+    - 'confirmed': emails BOTH the patient AND the doctor
+    - 'created', 'cancelled': emails the patient only
+    """
+    if appointment is None:
         return
 
-    subject = f'Appointment {event}: {appointment.date_time:%Y-%m-%d %H:%M}'
-    message = (
-        f'Doctor: {appointment.doctor.name}\n'
-        f'Patient: {appointment.patient.name}\n'
-        f'Status: {appointment.status}\n'
-        f'Event: {event}\n'
-    )
-    send_mail(
-        subject,
-        message,
-        getattr(settings, 'DEFAULT_FROM_EMAIL', 'clinic@example.com'),
-        [patient_email],
-        fail_silently=True,
-    )
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'clinic@example.com')
+    patient_email = appointment.patient.email
+    date_str = appointment.date_time.strftime('%Y-%m-%d %H:%M')
+    doctor_name = appointment.doctor.name
+    patient_name = appointment.patient.name
+
+    # ── Always notify the patient ─────────────────────────────────────────
+    if patient_email:
+        if event == 'confirmed':
+            patient_subject = f'Appointment Confirmed — {date_str}'
+            patient_body = (
+                f'Dear {patient_name},\n\n'
+                f'Your appointment with Dr. {doctor_name} has been confirmed.\n\n'
+                f'  Date & Time: {date_str}\n\n'
+                f'Please arrive 10 minutes early. If you need to cancel, '
+                f'do so at least 24 hours in advance.\n\n'
+                f'Best regards,\n'
+                f'The Medical Cabinet Team'
+            )
+        elif event == 'cancelled':
+            patient_subject = f'Appointment Cancelled — {date_str}'
+            patient_body = (
+                f'Dear {patient_name},\n\n'
+                f'Your appointment with Dr. {doctor_name} on {date_str} '
+                f'has been cancelled.\n\n'
+                f'If this was unexpected, please contact the clinic to reschedule.\n\n'
+                f'Best regards,\n'
+                f'The Medical Cabinet Team'
+            )
+        else:  # 'created' or any other event
+            patient_subject = f'Appointment {event.title()} — {date_str}'
+            patient_body = (
+                f'Dear {patient_name},\n\n'
+                f'Your appointment request with Dr. {doctor_name} on {date_str} '
+                f'has been received. You will be notified once it is confirmed.\n\n'
+                f'Best regards,\n'
+                f'The Medical Cabinet Team'
+            )
+
+        send_mail(patient_subject, patient_body, from_email, [patient_email], fail_silently=True)
+
+    # ── Notify the doctor when an appointment is confirmed ────────────────
+    if event == 'confirmed':
+        doctor_email = getattr(appointment.doctor, 'user', None)
+        if doctor_email:
+            doctor_email = doctor_email.email
+        if doctor_email:
+            doctor_subject = f'New Confirmed Appointment — {patient_name} on {date_str}'
+            doctor_body = (
+                f'Dear Dr. {doctor_name},\n\n'
+                f'A new appointment has been confirmed in your schedule.\n\n'
+                f'  Patient: {patient_name}\n'
+                f'  Date & Time: {date_str}\n\n'
+                f'Please review your agenda for details.\n\n'
+                f'Best regards,\n'
+                f'The Medical Cabinet Team'
+            )
+            send_mail(doctor_subject, doctor_body, from_email, [doctor_email], fail_silently=True)
 
 
 def get_available_slots(doctor, day):

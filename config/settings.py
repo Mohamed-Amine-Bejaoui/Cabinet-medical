@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'myapp.folders.accounts',
+    'myapp.folders.accounts.apps.AccountsConfig',
     'myapp.folders.appointments',
 ]
 

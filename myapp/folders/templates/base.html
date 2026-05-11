@@ -475,7 +475,9 @@
         </div>
         {% if user.is_authenticated %}
             <div style="display: flex; gap: 0.5rem; margin-left: auto;">
-                <a href="{% url 'accounts:edit_profile' %}">Profile</a>
+                {% if user.role != 'secretary' %}
+                    <a href="{% url 'accounts:edit_profile' %}">Profile</a>
+                {% endif %}
                 <a href="{% url 'accounts:logout' %}" class="logout-btn">Logout</a>
             </div>
         {% endif %}

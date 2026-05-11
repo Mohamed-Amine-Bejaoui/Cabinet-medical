@@ -401,7 +401,15 @@ def secretary_dashboard(request):
         messages.error(request, 'No doctor assigned to your account yet.')
         return redirect('dashboard')
 
-    doctor = get_object_or_404(Doctor, user_id=request.user.assigned_doctor_id)
+    doctor_user = get_object_or_404(CustomUser, id=request.user.assigned_doctor_id, role=CustomUser.Role.DOCTOR)
+    try:
+        doctor = doctor_user.doctor_profile
+    except Doctor.DoesNotExist:
+        doctor = Doctor.objects.create(
+            user=doctor_user,
+            name=doctor_user.get_full_name() or doctor_user.username,
+            specialty='General Medicine',
+        )
     
     # Pending requests that need approval
     pending_requests = Appointment.objects.filter(
